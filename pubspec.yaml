@@ -1,0 +1,12 @@
+name: custom_dart_http
+version: 0.0.1
+description: Patch of Dart SDK _http folder to provide more leniency with non-compliant web servers.
+homepage: https://github.com/2x2xplz/custom-dart-http
+
+environment:
+  sdk: ">=2.8.4 <3.0.0"
+
+dependencies:
+
+dev_dependencies:
+  test: ^1.15.3

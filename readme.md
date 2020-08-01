@@ -1,0 +1,17 @@
+# custom-dart-http
+Override/fork of Dart SDK http client, adding leniency for malformed servers
+
+### Last edited: Aug 2020
+
+### Latest stable versions: Dart 2.8.4, Flutter 1.17.5, Dio 3.0.9
+
+While building a Flutter app, I found that I was not satisfied with the original Dart SDK's choices for HTTP communication. Specifically, Dart enforces [RFC 6265](https://tools.ietf.org/html/rfc6265) compliance. RFC 6265 was approved in 2011, however, some web servers still don't fully comply. Some conform to an earlier spec, some have bugs. In any case, Dart generally requires compliance and throws fatal errors when a malformed Response is returned. Being the lowest level of the stack, there's no opportunity for the developer to override the default behavior -- thus forking the original SDK is the only choice.
+
+Alternatives: Most clients recognize that web server responses are rarely perfect. Libraries in other languages, like [OKHttp](https://square.github.io/okhttp/) for Java, allow for some non-compliant responses, ignoring the problem if possible, or trying to use as much of the Response as possible (i.e. the full Response minus a malformed header). Web browsers like Firefox or Chrome, handle a great deal of non-compliant Responses, including bad HTML, CSS and JavaScript. Obviously, if the error is sever enough, the browser cannot display the desired page, but browsers do an amazing job of rendering pages with missing end tags, unquoted attributes, etc. Imagine if Chrome fatally crashed every time a bad web page was loaded?  
+
+The initial impetus for creating this library was to allow a Flutter application to accept web Responses with illegal characters in their headers, specifically, `Set-Cookie` headers with spaces in the cookie value. The set of legal characters, compliant with 6265, is hard-coded into [http_headers.dart](https://github.com/dart-lang/sdk/blob/2.8.4/sdk/lib/_http/http_headers.dart#L1068) (version 2.8.4 at the time of writing).
+
+Enormous credit goes to user [@shaxxx](https://github.com/shaxxx) who built [a similar library](https://github.com/shaxxx/AltHttp) to allow a Dart HttpClient to send mixed-case Header names. Without his example, I would not have realized the possibility of creating a custom package, nor how to proceed. The official Dart library enforced lowercase-only headers, which unfortunately caused incompatibilities with web servers that expected case-sensitive Headers. Although the RFC specs going back to 2000 have stated that header names are case-insensitive, not all web servers are compliant. @shaxxx built his library to override the default behavior, which fortunately was [relaxed in the official SDK](https://github.com/dart-lang/sdk/commit/efabc6f84854f8091b4b2a875076a74ebd23656a) after additional users reported real-world incompatibilities. Hopefully this library will also be obsoleted by a more lenient Dart SDK as well. @shaxx not only showed that this was possible, he also [pointed out](https://github.com/dart-lang/sdk/issues/33501#issuecomment-532887818) that the Dart code defined abstract interfaces but offers no option for developers to override the default implementation: 
+
+> You have bunch of Abstract classes in HTTP client that are used only as internal implementations. Take HttpHeaders for instance. It's abstract, and HttpClient uses one single concrete implementation, which is internal, and has no way to use some other implementation.
+> Why making abstract class in a first place if you're forcing it to be used in a single way?
